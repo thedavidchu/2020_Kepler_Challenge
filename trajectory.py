@@ -22,6 +22,8 @@ Goals:
 Further goals:
 - Make time current time (YES)
 - Collect all TLEs off a website
+- Use that to find a satellite's name
+- Do it by satellite name
 
 Sources:
 1. https://rhodesmill.org/skyfield/earth-satellites.html
@@ -57,6 +59,7 @@ class track_satellite:
 
 	# Get TLE and date
 	def help(self):
+		# Demonstrate correct format of TLE
 		print('TLE format example: \n1 25544U 98067A   20134.54218028  .00000832  00000-0  22964-4 0  9990\n2 25544  51.6441 159.9408 0000907 287.5638 232.4948 15.49368071226640')
 		return True
 
@@ -108,7 +111,7 @@ class track_satellite:
 
 	# Calculate satellite position
 	def sat_pos(self):
-		#Invalid...self.pos = skyfield.EarthSatellite()
+		# Create timescale
 		ts = load.timescale()
 
 		# Does not identify satellite's name
