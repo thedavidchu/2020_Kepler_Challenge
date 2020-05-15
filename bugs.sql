@@ -10,19 +10,16 @@ Bloop’s user base is old-fashioned; 70% of the feedback forms you receive are 
 envelope. How do you account for this in the management of your database?
 If you like, you may refine what the Bloop service does to help develop your thoughts.
 
-DISCLAIMER: I have no experience with SQL and I am not 100% clear with its full capabilities.
-
 */
 
 /*
-Process:
-1. Receive query
-2. Take info, put into database
-3. Analyze and label query
-4. Send to various departments in order of priority
-5. Resolve
+	TABLES OF INFORMATION
 
-*/
+	1. Client table. Stores information about the clients
+	2. Product table. Stores information about the product
+	3. Feedback table. Stores information about feedback.
+
+ */
 
 CREATE TABLE CLIENT (
 	/* Contact information */
@@ -45,59 +42,69 @@ CREATE TABLE PRODUCT (
 
 );
 
-CREATE TABLE RAW_QUERY (
+CREATE TABLE FEEDBACK (
 	/* Store info about data collection */
 
 	Type 			CHAR	(30), 		/* Complaint, bug, suggestion, etc. */
 	MethodCollected	CHAR	(10), 		/* Mail or Electronic. This could be stored in a Boolean variable */
-	ClientNumber	INT, 				/* Store the number of the client who sent the query */
+	ClientNumber	INT, 				/* Store the number of the client who sent the feedback */
 	DateReceived 	DATE,				/* Format: YYYY-MM-DD */
 
-	QueryNumber 	INT,				/* Add query to queue */
-	Query 			CHAR 	(1000),		/* Store the text of the query. This is a bit memory inefficient, but bundles all the data together */
+	FeedbackNumber 	INT,				/* Add feedback to queue */
+	Feedback		CHAR 	(1000),		/* Store the text of the feedback. This is a bit memory inefficient, but bundles all the data together */
 
 	Status 			CHAR 	(11) 		-- Raw Data, In Progress, or Done
 
 	/* Store which department it should go to */
 	Priority 		INT,				/* Flag more important queries */
-	Department 		CHAR	(20),		/* Choose which department to direct the query to */
+	Department 		CHAR	(20),		/* Choose which department to direct the feedback to */
 	ProductNumber 	INT, 				/* Product number of item */
 	DateResolved 	DATE				/* Date resolved or NULL */
 
 );
 
-/* 1. Add a query into the database */
+/* 
+	EXAMPLE CODE TO DEAL WITH FEEDBACK
+	
+	1. Take example raw feedback
+	2. Analyze the feedback, label it appropriately
+	3. Having resolved the feedback, mark the feedback as Done
+
+ */
 
 
--- Generate next query number
-SELECT MAX(QueryNumber)
+/* 1. Add a feedback into the database */
+
+
+-- Generate next feedback number
+SELECT MAX(FeedbackNumber)
 AS EndQueue
-FROM RAW_QUERY;
+FROM FEEDBACK;
 
--- Add Query info
-INSERT INTO QUERY (Type, MethodCollected, ClientNumber, DateReceived, QueryNumber, Query, Status)
-VALUES ('Bug', 'Electronic', 12345, 2020-05-13, EndQueue+1, 'Program crashed!', 'Raw Data');
-
-
-/* 2. Analyze and label query */
+-- Add Feedback info
+INSERT INTO FEEDBACK (Type, MethodCollected, ClientNumber, DateReceived, FeedbackNumber, Feedback, Status)
+VALUES ('Bug', 'Electronic', 12345, 2020-05-13, EndQueue+1, 'Finance Program crashed!', 'Raw Data');
 
 
--- Find lowest QueryNumber of unlabelled queries
-SELECT MIN(QueryNumber)
+/* 2. Analyze and label feedback */
+
+
+-- Find lowest FeedbackNumber of unlabelled queries
+SELECT MIN(FeedbackNumber)
 AS StartQueue
-FROM QUERY 
+FROM FEEDBACK
 WHERE Status='Raw Data';
 
--- Label this complaint appropriately
-UPDATE QUERY
+-- Label this feedback appropriately
+UPDATE FEEDBACK
 SET Status='In Progress', Priority='0',Department='Finances',ProductNumber=54321
-WHERE QueryNumber = StartQueue
+WHERE FeedbackNumber = StartQueue
 
 
-/* 3. Resolve query */
+/* 3. Resolve feedback */
 
 
 -- After the feedback has been resolved, mark as done
-UPDATE QUERY
+UPDATE FEEDBACK
 SET Status='Done',DateResolved=2020-05-15
-WHERE QueryNumber = StartQueue
+WHERE FeedbackNumber = StartQueue
