@@ -34,51 +34,57 @@ class track_satellite:
 		
 		# TLE data in list
 		self.TLE = []
+		self.name = ''
 
 		# Date and time
 		self.start_date = []
 		self.date = []
-		self.step = 180 # Measured in seconds
+
+		# Calculation parameters
+		self.length = 24 # Number of hours the simulation runs for
+		self.step = 180 # Step size, measured in seconds
 
 		# Plot
 		self.longitude = []
 		self.latitude = []
 
-	# Run class
-	def run(self):
-		print('>>>Get TLE')
-		print(self.get_TLE())
-		print('>>>Get Date')
-		print(self.get_date())
-		print('>>>Get SAT POS')
+		# Automatically start
+		
+		self.get_TLE()
+		self.get_date()
 		self.pos_in_time()
-		print('>>>Get Map')
 		self.map()
+		r = input('PRESS ENTER TO EXIT')
 
-		return True
 
 	# Get TLE and date
-	def help(self):
-		# Demonstrate correct format of TLE
-		print('TLE format example: \n1 25544U 98067A   20134.54218028  .00000832  00000-0  22964-4 0  9990\n2 25544  51.6441 159.9408 0000907 287.5638 232.4948 15.49368071226640')
-		return True
 
 	def get_TLE(self):
-		r = input('Enter the TLE for the satellite you wish to chart one line at a time. Type \'HELP\' for further instructions. Press \'ENTER\' to continue.\n')
+		print('\n>>>Getting TLE data...\n')
+		print('Enter the (1) name and (2) TLE for the satellite you wish to chart line-by-line as instructed. Failure to do so will result in an error :(')
+		print('\n\tTLE format example: \n\n\t1 25544U 98067A   20134.54218028  .00000832  00000-0  22964-4 0  9990\n\t2 25544  51.6441 159.9408 0000907 287.5638 232.4948 15.49368071226640')
+		print('\n\n\tFurther examples are available at: http://celestrak.com/NORAD/elements/stations.txt\n')
 
-		# Check if needed help
-		if r == 'HELP':
-			self.help()
-		elif r == '':
+		self.name = input('Type the name of your satellite or leave blank to plot the ISS. Press \'ENTER\' to continue.\n')
+
+		# Clear previous TLE data
+		self.TLE = []
+
+		if self.name == '':
+			# Automatic TLE entry. For test purposes only.
+
+			self.name = 'ISS (Zarya)'
+
 			# Line 1 of TLE
-			self.TLE.append( '1 25544U 98067A   20134.54218028  .00000832  00000-0  22964-4 0  9990' )
+			self.TLE.append( '1 25544U 98067A   20136.53767674  .00002826  00000-0  58675-4 0  9990' )
 			# Line 2 of TLE
-			self.TLE.append( '2 25544  51.6441 159.9408 0000907 287.5638 232.4948 15.49368071226640' )
+			self.TLE.append( '2 25544  51.6449 150.0725 0001795 321.2979 176.4300 15.49373505226953' )
+
 		else:
 			# Line 1 of TLE
-			self.TLE.append( [input('Enter Line 1 of TLE:')] )
+			self.TLE.append( input('Enter Line 1 of TLE: ') )
 			# Line 2 of TLE
-			self.TLE.append( [input('Enter Line 2 of TLE:')] )
+			self.TLE.append( input('Enter Line 2 of TLE: ') )			
 
 		# Check if the right format
 		"""
@@ -88,10 +94,12 @@ class track_satellite:
 		return self.TLE
 
 	def get_date(self):
-		date = input('Enter the start date of your satellite (Format: YYYY.MM.DD.HH.MM.SS).')
+		print('\n>>>Getting start date...\n')
+		print('Enter the start date of your satellite (Format: YYYY.MM.DD.HH.MM.SS).')
+		date = input('Type \'NOW\' (or leave blank) if you wish to use the current date and time. Press \'ENTER\' to continue.\n')
 		
 		# If no input, take current time
-		if date == '':
+		if date == '' or date == 'NOW':
 			date = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
 
 		# Parse date
@@ -99,7 +107,7 @@ class track_satellite:
 		
 		
 		if len(self.start_date) != 6:
-			print('You got the date format wrong, mate! Try again...')
+			print('Wrong date format. Try again!')
 			self.get_date()
 		else:
 			self.start_date = [int(start) for start in self.start_date]
@@ -114,19 +122,15 @@ class track_satellite:
 		# Create timescale
 		ts = load.timescale()
 
-		# Does not identify satellite's name
-		satellite = EarthSatellite(self.TLE[0],self.TLE[1],'Satellite',ts)
+		# Satellite
+		satellite = EarthSatellite(self.TLE[0],self.TLE[1],self.name,ts)
 
 		# Find t
 		t = ts.utc(self.date[0],self.date[1],self.date[2],self.date[3],self.date[4],self.date[5])
 		geocentric = satellite.at(t)
-
 		# Generate Longitude and Latitude of satellite
 		y = geocentric.subpoint().latitude
 		x = geocentric.subpoint().longitude
-
-		#print('- Lat:', x, '\n  Long:', y)
-
 		return x,y
 
 	def evolve_time(self):
@@ -138,33 +142,41 @@ class track_satellite:
 		return self.date
 
 	def pos_in_time(self):
-		N = math.ceil(24*3600 / self.step)
+		print('\n>>>Calculating satellite position...\n')
+		N = math.ceil(self.length*3600 / self.step)
 
 		for i in range(0,N,1):
 			x,y = self.sat_pos()
 			self.longitude.append(x.degrees)
 			self.latitude.append(y.degrees)
 			self.evolve_time()
-
+		
 		return True
 
 	# Map longitude, latitude -> World Map
 	def map(self):
+		print('\n>>>Creating satellite map...\n')
+
+# Print warning message
+		print('Note the satellite appears to jump across the Earth when it crosses the dateline. Of course, it is not actually crossing the planet in such a fashion.')
+		print('I was going to edit this out by breaking the curve up so it never crosses the dateline, however I realized this would be harder to track the satellite as it crosses the dateline. Thus, I decided to leave it to aid in recognizing where the satellite\'s position picks up again.\n')
+
 		# Take self.pos -> map points onto 2D map of Earth
 		im = plt.imread('World Map.png')
 		implot = plt.imshow(im,extent=[-180,180,-90,90])
-		#print(self.longitude,self.latitude)
+		start_date = str(self.start_date[0]) + '-' + str(self.start_date[1]) + '-' + str(self.start_date[2])
+		title = '24h Orbit of ' + self.name + ' starting on ' + start_date
+		plt.title(title)
+		plt.xlabel('Longitude')
+		plt.ylabel('Latitude')
 
 		plt.plot(self.longitude,self.latitude, 'r-')
 		plt.show()
+		
 		return True
 
 def run():
 	x = track_satellite()
-	x.run()
-
-	input('PRESS ENTER TO EXIT')
-
 	return True
 
 run()
