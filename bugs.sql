@@ -38,25 +38,66 @@ CREATE TABLE CLIENT (
 	DateJoined	 	CHAR	(8) 
 );
 
-CREATE TABLE QUERY (
+CREATE TABLE PRODUCT (
+	ProductName 	CHAR 	(20),
+	ProductNumber 	INT,
+	Department 		CHAR 	(20)
+
+);
+
+CREATE TABLE RAW_QUERY (
 	/* Store info about data collection */
 
 	Type 			CHAR	(30), 		/* Complaint, bug, suggestion, etc. */
-	MethodCollected	CHAR	(10), 		/* Mail or electronic. This could be stored in a Boolean variable */
+	MethodCollected	CHAR	(10), 		/* Mail or Electronic. This could be stored in a Boolean variable */
 	ClientNumber	INT, 				/* Store the number of the client who sent the query */
-	DateReceived 	DATE,			/* Format: YYYYMMDD */
+	DateReceived 	DATE,				/* Format: YYYY-MM-DD */
 
 	QueryNumber 	INT,				/* Add query to queue */
 	Query 			CHAR 	(1000),		/* Store the text of the query. This is a bit memory inefficient, but bundles all the data together */
 
+	Status 			CHAR 	(11) 		-- Raw Data, In Progress, or Done
+
 	/* Store which department it should go to */
 	Priority 		INT,				/* Flag more important queries */
 	Department 		CHAR	(20),		/* Choose which department to direct the query to */
+	ProductNumber 	INT, 				/* Product number of item */
 	DateResolved 	DATE				/* Date resolved or NULL */
 
 );
 
+/* 1. Add a query into the database */
 
-/* Find all unlabelled queries */
-SELECT * FROM QUERY WHERE Priority IS NULL;
 
+-- Generate next query number
+SELECT MAX(QueryNumber)
+AS EndQueue
+FROM RAW_QUERY;
+
+-- Add Query info
+INSERT INTO QUERY (Type, MethodCollected, ClientNumber, DateReceived, QueryNumber, Query, Status)
+VALUES ('Bug', 'Electronic', 12345, 2020-05-13, EndQueue+1, 'Program crashed!', 'Raw Data');
+
+
+/* 2. Analyze and label query */
+
+
+-- Find lowest QueryNumber of unlabelled queries
+SELECT MIN(QueryNumber)
+AS StartQueue
+FROM QUERY 
+WHERE Status='Raw Data';
+
+-- Label this complaint appropriately
+UPDATE QUERY
+SET Status='In Progress', Priority='0',Department='Finances',ProductNumber=54321
+WHERE QueryNumber = StartQueue
+
+
+/* 3. Resolve query */
+
+
+-- After the feedback has been resolved, mark as done
+UPDATE QUERY
+SET Status='Done',DateResolved=2020-05-15
+WHERE QueryNumber = StartQueue
