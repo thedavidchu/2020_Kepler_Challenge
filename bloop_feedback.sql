@@ -21,45 +21,60 @@ If you like, you may refine what the Bloop service does to help develop your tho
 
  */
 
+CREATE DOMAIN D_STATUS VARCHAR(11)
+	CHECK (VALUE IN ('Raw Data', 'In Progress', 'Done'));
+
+
+CREATE DOMAIN D_METHODCOLLECTED VARCHAR(10)
+	CHECK (VALUE IN ('Mail', 'Electronic'));
+
+CREATE DOMAIN D_DEPARTMENT VARCHAR(8)
+	CHECK (VALUE IN ('Finance', 'R and D', 'PR', 'Safety'));
+
 CREATE TABLE CLIENT (
 	/* Contact information */
-	ClientName		CHAR	(30),
-	ClientNumber	INT,
+	ClientName		VARCHAR		(30),
+	ClientNumber	INT 		NOT NULL,
 
-	Address			CHAR 	(30),
-	PostalCode 		CHAR 	(6),
+	Address			VARCHAR 	(30),
+	PostalCode 		CHAR 		(6),
 
-	City			CHAR 	(20),
-	Country 		CHAR 	(20),
+	City			VARCHAR 	(20),
+	Country 		VARCHAR 	(20),
 
-	DateJoined	 	CHAR	(8) 
+	DateJoined	 	DATE,
+
+	PRIMARY KEY 	(ClientNumber) 
 );
 
 CREATE TABLE PRODUCT (
-	ProductName 	CHAR 	(20),
+	ProductName 	VARCHAR 	(20),
 	ProductNumber 	INT,
-	Department 		CHAR 	(20)
-
+	Department 		VARCHAR 	(20)
 );
 
 CREATE TABLE FEEDBACK (
 	/* Store info about data collection */
 
-	Type 			CHAR	(30), 		/* Complaint, bug, suggestion, etc. */
-	MethodCollected	CHAR	(10), 		/* Mail or Electronic. This could be stored in a Boolean variable */
+	Type 			VARCHAR	(30), 		/* Complaint, bug, suggestion, etc. */
+	MethodCollected	D_METHODCOLLECTED,	/* Mail or Electronic. This could be stored in a Boolean variable */
 	ClientNumber	INT, 				/* Store the number of the client who sent the feedback */
 	DateReceived 	DATE,				/* Format: YYYY-MM-DD */
 
-	FeedbackNumber 	INT,				/* Add feedback to queue */
-	Feedback		CHAR 	(1000),		/* Store the text of the feedback. This is a bit memory inefficient, but bundles all the data together */
+	IDNumber 		INT 	NOT NULL,	/* Give feedback and ID number. This will keep its place in the queue */
+	Feedback		VARCHAR (1000),		/* Store the text of the feedback. This is a bit memory inefficient, but bundles all the data together */
 
-	Status 			CHAR 	(11) 		-- Raw Data, In Progress, or Done
+	Status 			D_STATUS,	 		-- Raw Data, In Progress, or Done
 
 	/* Store which department it should go to */
 	Priority 		INT,				/* Flag more important queries */
-	Department 		CHAR	(20),		/* Choose which department to direct the feedback to */
+	Department 		D_DEPARTMENT,		/* Choose which department to direct the feedback to */
 	ProductNumber 	INT, 				/* Product number of item */
-	DateResolved 	DATE				/* Date resolved or NULL */
+	DateResolved 	DATE,				/* Date resolved or NULL */
+
+	PRIMARY KEY 	(IDNumber),
+	FOREIGN KEY 	(ClientNumber) REFERENCES CLIENT (ClientNumber),
+	FOREIGN KEY 	(ProductNumber) REFERENCES PRODUCT (ProductNumber)
 
 );
 
@@ -77,34 +92,34 @@ CREATE TABLE FEEDBACK (
 
 
 -- Generate next feedback number
-SELECT MAX(FeedbackNumber)
-AS EndQueue
-FROM FEEDBACK;
+SELECT 	MAX(IDNumber)
+AS 		EndQueue
+FROM 	FEEDBACK;
 
--- Add Feedback info
+-- Add raw feedback info into queue
 INSERT INTO FEEDBACK (Type, MethodCollected, ClientNumber, DateReceived, FeedbackNumber, Feedback, Status)
-VALUES ('Bug', 'Electronic', 12345, 2020-05-13, EndQueue+1, 'Finance Program crashed!', 'Raw Data');
+VALUES 		('Bug', 'Electronic', 12345, 2020-05-13, EndQueue+1, 'Finance Program crashed!', 'Raw Data');
 
 
 /* 2. Analyze and label feedback */
 
 
--- Find lowest FeedbackNumber of unlabelled queries
-SELECT MIN(FeedbackNumber)
-AS StartQueue
-FROM FEEDBACK
-WHERE Status='Raw Data';
+-- Find lowest IDNumber of unlabelled queries
+SELECT 	MIN(IDNumber)
+AS 		StartQueue
+FROM 	FEEDBACK
+WHERE 	Status='Raw Data';
 
 -- Label this feedback appropriately
-UPDATE FEEDBACK
-SET Status='In Progress', Priority='0',Department='Finances',ProductNumber=54321
-WHERE FeedbackNumber = StartQueue
+UPDATE 	FEEDBACK
+SET 	Status='In Progress', Priority='0',Department='Finance',ProductNumber=54321
+WHERE 	IDNumber = StartQueue
 
 
 /* 3. Resolve feedback */
 
 
 -- After the feedback has been resolved, mark as done
-UPDATE FEEDBACK
-SET Status='Done',DateResolved=2020-05-15
-WHERE FeedbackNumber = StartQueue
+UPDATE 	FEEDBACK
+SET 	Status='Done',DateResolved=2020-05-15
+WHERE 	IDNumber = StartQueue

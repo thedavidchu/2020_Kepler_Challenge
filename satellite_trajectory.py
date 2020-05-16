@@ -21,12 +21,14 @@ Goals:
 
 Further goals:
 - Make time current time (YES)
-- Collect all TLEs off a website
-- Use that to find a satellite's name
-- Do it by satellite name
+- Collect all TLEs off a website (not necessary)
+- Use that to find a satellite's name (not necessary)
+- Do it by satellite name (YES)
+- Check errors for TLE data (done automatically)
 
 Sources:
 1. https://rhodesmill.org/skyfield/earth-satellites.html
+
 """
 
 class track_satellite:
@@ -41,8 +43,8 @@ class track_satellite:
 		self.date = []
 
 		# Calculation parameters
-		self.length = 24 # Number of hours the simulation runs for
-		self.step = 180 # Step size, measured in seconds
+		self.sim_len = 24 # Number of hours the simulation runs for
+		self.sim_step = 180 # Time step size between measurements, measured in seconds
 
 		# Plot
 		self.longitude = []
@@ -135,7 +137,7 @@ class track_satellite:
 
 	def evolve_time(self):
 		# Increment the seconds
-		self.date[5] += self.step
+		self.date[5] += self.sim_step
 
 		# We can just add to the seconds. The functions work with this!
 
@@ -143,7 +145,7 @@ class track_satellite:
 
 	def pos_in_time(self):
 		print('\n>>>Calculating satellite position...\n')
-		N = math.ceil(self.length*3600 / self.step)
+		N = math.ceil(self.sim_len*3600 / self.sim_step)
 
 		for i in range(0,N,1):
 			x,y = self.sat_pos()
@@ -157,7 +159,7 @@ class track_satellite:
 	def map(self):
 		print('\n>>>Creating satellite map...\n')
 
-# Print warning message
+		# Print warning message
 		print('Note the satellite appears to jump across the Earth when it crosses the dateline. Of course, it is not actually crossing the planet in such a fashion.')
 		print('I was going to edit this out by breaking the curve up so it never crosses the dateline, however I realized this would be harder to track the satellite as it crosses the dateline. Thus, I decided to leave it to aid in recognizing where the satellite\'s position picks up again.\n')
 
