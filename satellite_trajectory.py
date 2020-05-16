@@ -27,7 +27,9 @@ Further goals:
 - Check errors for TLE data (done automatically)
 
 Sources:
-1. https://rhodesmill.org/skyfield/earth-satellites.html
+1. Library documentation. https://rhodesmill.org/skyfield/earth-satellites.html
+2. Image of the world. https://destinationofmarvel.blogspot.com/2011/03/map-coordinates-latitude-longitude.html
+3. TLE for ISS. http://celestrak.com/NORAD/elements/stations.txt
 
 """
 
@@ -160,8 +162,8 @@ class track_satellite:
 		print('\n>>>Creating satellite map...\n')
 
 		# Print warning message
-		print('Note the satellite appears to jump across the Earth when it crosses the dateline. Of course, it is not actually crossing the planet in such a fashion.')
-		print('I was going to edit this out by breaking the curve up so it never crosses the dateline, however I realized this would be harder to track the satellite as it crosses the dateline. Thus, I decided to leave it to aid in recognizing where the satellite\'s position picks up again.\n')
+		print('Note the satellite appears to jump across the Earth when it crosses the International Date Line (IDL). Of course, it is not actually crossing the planet in such a fashion. I was going to edit this out by breaking the curve up so that I plot a new line everytime it crosses the IDL, however I realized this would be harder to track the satellite as it crosses the IDL. Thus, I decided to leave it to aid in recognizing where the satellite\'s position picks up again.\n')
+		# 		Admittedly, I could have joined this 'discontinuities' with a dashed line, but then it is harder to follow a broken line...
 
 		# Take self.pos -> map points onto 2D map of Earth
 		im = plt.imread('World Map.png')

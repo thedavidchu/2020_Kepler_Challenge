@@ -17,7 +17,13 @@ If you like, you may refine what the Bloop service does to help develop your tho
 
 	1. Client table. Stores information about the clients
 	2. Product table. Stores information about the product
-	3. Feedback table. Stores information about feedback.
+	3. Feedback table. Stores information about feedback
+
+
+	DOMAINS
+	1. Status. Various statuses of completion
+	2. Method collected. How it was collected
+	3. Department. The department that should resolve the feedback
 
  */
 
@@ -77,6 +83,9 @@ CREATE TABLE FEEDBACK (
 	FOREIGN KEY 	(ProductNumber) REFERENCES PRODUCT (ProductNumber)
 
 );
+
+/* ******************************************************************************************************************* */
+
 
 /* 
 	EXAMPLE CODE TO DEAL WITH FEEDBACK
